@@ -112,7 +112,7 @@ export default class Lightbox extends Component {
     const { images } = this.props;
     const { currentPosition } = this.state;
     let newPosition = currentPosition - 1;
-    if (newPosition <= 0) {
+    if (newPosition < 0) {
       // loop back around to the end
       newPosition = images.length - 1;
     }
