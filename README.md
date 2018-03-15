@@ -1,2 +1,2 @@
-# br-lightbox
-A very simple image lightbox
+# Simple React Lightbox
+A very simple image lightbox react component
