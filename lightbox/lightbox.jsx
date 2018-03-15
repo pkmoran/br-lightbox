@@ -41,10 +41,17 @@ export default class Lightbox extends Component {
         const component = this;
         // if the images is too big, constrain it
         const maxWidth = document.body.clientWidth * 0.7;
-        const maxHeight = document.body.clientHeight * 0.9;
+        const maxHeight = document.body.clientHeight * 0.75;
         img.onload = function() {
-          this.width = this.width > maxWidth ? maxWidth : this.width;
-          this.height = this.height > maxHeight ? maxHeight : this.height;
+          const imageRatio = this.height / this.width;
+          if (imageRatio > 1) {
+            // the height is larger so we need to constrain the height
+            this.height = this.height > maxHeight ? maxHeight : this.height;
+            this.width = this.height / imageRatio;
+          } else {
+            this.width = this.width > maxWidth ? maxWidth : this.width;
+            this.height = this.width * imageRatio;
+          }
 
           component.setState({
             width: this.width,
@@ -74,8 +81,6 @@ export default class Lightbox extends Component {
             this.width = this.width > maxWidth ? maxWidth : this.width;
             this.height = this.width * imageRatio;
           }
-          // this.width = this.width > maxWidth ? maxWidth : this.width;
-          // this.height = this.height > maxHeight ? maxHeight : this.height;
 
           component.setState({
             width: this.width + this.width * 0.1,
