@@ -7,7 +7,7 @@ export default class Lightbox extends Component {
     super(props);
 
     this.state = {
-      currentPosition: 0, // the current item in the images array
+      currentPosition: null, // the current item in the images array
       height: 0, // the height of the current image
       width: 0, // the width of the current image
     };
@@ -27,63 +27,67 @@ export default class Lightbox extends Component {
     const { images, isOpen } = this.props;
     const { currentPosition } = this.state;
 
-    if (isOpen) {
-      if (images !== prevProps.images && !!images.length) {
-        // remove anything that is in the image container already
-        while (this.imageContainer.firstChild) {
-          this.imageContainer.removeChild(this.imageContainer.firstChild);
-        }
+    if (isOpen !== prevProps.isOpen) {
+      // if we are opening or closing the lightbox, set the current position accordingly
+      if (isOpen) {
+        this.setState({ currentPosition: 0 });
+      } else {
+        this.setState({ currentPosition: null });
+      }
+    }
+    if (currentPosition !== prevState.currentPosition && currentPosition !== null) {
+      // if the current position changes and isn't null, we are clicking through the images
+      // if it is null, we have just closed the lightbox so do nothing
 
-        // set the shown image to the first image in the list
-        const img = new Image();
-        img.src = images[0].src;
-        img.classList = 'lightbox__image';
-        const component = this;
-        // if the images is too big, constrain it
-        const maxWidth = document.body.clientWidth * 0.7;
-        const maxHeight = document.body.clientHeight * 0.9;
-        img.onload = function() {
-          this.width = this.width > maxWidth ? maxWidth : this.width;
+      while (this.imageContainer.firstChild) {
+        // remove anything that is in there
+        this.imageContainer.removeChild(this.imageContainer.firstChild);
+      }
+
+      // create a new image
+      const img = new Image();
+
+      // set the src attribute to the current image
+      img.src = images[currentPosition].src;
+
+      // give it a class
+      img.classList = 'lightbox__image';
+
+      // set the component context so we can use it in the img.onload function
+      const component = this;
+
+      // if the images is too big, constrain it
+      const maxWidth = document.body.clientWidth * 0.7;
+      const maxHeight = document.body.clientHeight * 0.75;
+
+      // once the image has loaded we can access the actual height and width
+      img.onload = function() {
+        // get the image ratio in case we have to resize it
+        // so we can retain the original proportions
+        const imageRatio = this.height / this.width;
+
+        if (imageRatio > 1) {
+          // the height is larger so we need to constrain the height
           this.height = this.height > maxHeight ? maxHeight : this.height;
 
-          component.setState({
-            width: this.width,
-            height: this.height,
-          });
-          component.imageContainer.appendChild(this);
-        };
-      } else if (currentPosition !== prevState.currentPosition) {
-        while (this.imageContainer.firstChild) {
-          this.imageContainer.removeChild(this.imageContainer.firstChild);
+          // set the width using the original ratio
+          this.width = this.height / imageRatio;
+        } else {
+          // the width is larger
+          this.width = this.width > maxWidth ? maxWidth : this.width;
+
+          // set the height using the original ratio
+          this.height = this.width * imageRatio;
         }
 
-        const img = new Image();
-        img.src = images[currentPosition].src;
-        img.classList = 'lightbox__image';
-        const component = this;
-        // if the images is too big, constrain it
-        const maxWidth = document.body.clientWidth * 0.7;
-        const maxHeight = document.body.clientHeight * 0.75;
-        img.onload = function() {
-          const imageRatio = this.height / this.width;
-          if (imageRatio > 1) {
-            // the height is larger so we need to constrain the height
-            this.height = this.height > maxHeight ? maxHeight : this.height;
-            this.width = this.height / imageRatio;
-          } else {
-            this.width = this.width > maxWidth ? maxWidth : this.width;
-            this.height = this.width * imageRatio;
-          }
-          // this.width = this.width > maxWidth ? maxWidth : this.width;
-          // this.height = this.height > maxHeight ? maxHeight : this.height;
-
-          component.setState({
-            width: this.width + this.width * 0.1,
-            height: this.height + this.height * 0.1,
-          });
-          component.imageContainer.appendChild(this);
-        };
-      }
+        // dynamically set the size of the image container to the actual image size
+        component.setState({
+          width: this.width,
+          height: this.height + 25, // to account for the close button
+        });
+        // add the image to the container
+        component.imageContainer.appendChild(this);
+      };
     }
   }
 
@@ -96,6 +100,7 @@ export default class Lightbox extends Component {
     const { currentPosition } = this.state;
     let newPosition = currentPosition + 1;
     if (newPosition === images.length) {
+      // loop back around to the beginning
       newPosition = 0;
     }
     this.setState({
@@ -107,7 +112,8 @@ export default class Lightbox extends Component {
     const { images } = this.props;
     const { currentPosition } = this.state;
     let newPosition = currentPosition - 1;
-    if (newPosition === 0) {
+    if (newPosition <= 0) {
+      // loop back around to the end
       newPosition = images.length - 1;
     }
     this.setState({
@@ -124,14 +130,14 @@ export default class Lightbox extends Component {
         <div className='lightbox__container'>
           <div className='lightbox__content'>
             <div
-              className='lightbox__previous'
+              className='lightbox__previous br-pointer'
               onClick={this.previousImage}
             >
               &lsaquo;
             </div>
             <div>
               <div
-                className='lightbox__close'
+                className='lightbox__close br-pointer'
                 onClick={onClose}
               >
                 Close (Esc) <i className='lightbox__x'>&times;</i>
@@ -146,7 +152,7 @@ export default class Lightbox extends Component {
               />
             </div>
             <div
-              className='lightbox__next'
+              className='lightbox__next br-pointer'
               onClick={this.nextImage}
             >
               &rsaquo;
